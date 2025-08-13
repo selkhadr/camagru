@@ -56,3 +56,7 @@ fi
 cat > camagru/.gitignore << 'EOF'
 .env
 public/images/uploads
+
+echo "🐳 Starting Docker containers..."
+cd camagru
+docker-compose up -d --build
