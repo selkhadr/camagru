@@ -1,0 +1,130 @@
+# docker-compose.prod.yml
+# Production configuration for Camagru
+
+version: '3.8'
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./public:/var/www/html
+      - ./src:/var/www/src
+      - ./ssl:/etc/ssl/private  # SSL certificates
+      - ./logs:/var/log/apache2
+    environment:
+      - DB_HOST=db
+      - DB_NAME=camagru
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    depends_on:
+      - db
+      - redis
+    networks:
+      - camagru-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MYSQL_DATABASE: camagru
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./src/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backups:/backups
+    networks:
+      - camagru-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASS}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASS}
+    volumes:
+      - redis_data:/data
+    networks:
+      - camagru-network
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/ssl/private
+      - ./public:/var/www/html
+    depends_on:
+      - web
+    networks:
+      - camagru-network
+
+  # Database backup service
+  db-backup:
+    image: mysql:8.0
+    restart: "no"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backups:/backups
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASS}
+    networks:
+      - camagru-network
+    entrypoint: |
+      bash -c '
+      set -e
+      echo "Starting backup..."
+      mysqldump -h db -u root -p${DB_ROOT_PASS} camagru > /backups/camagru_$$(date +%Y%m%d_%H%M%S).sql
+      echo "Backup completed"
+      find /backups -name "camagru_*.sql" -mtime +7 -delete
+      echo "Old backups cleaned up"
+      '
+
+  # Log rotation and monitoring
+  logrotate:
+    image: alpine:latest
+    restart: unless-stopped
+    volumes:
+      - ./logs:/logs
+      - ./logrotate.conf:/etc/logrotate.conf
+    command: |
+      sh -c '
+      while true; do
+        logrotate /etc/logrotate.conf
+        sleep 86400
+      done
+      '
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  camagru-network:
+    driver: bridge
+
+# Secrets for production
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  app_secret:
+    file: ./secrets/app_secret.txt
