@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camagru - Photo Editor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">📸 Camagru</h1>
+            <nav class="nav">
+                <div id="auth-buttons" class="auth-buttons">
+                    <button id="login-btn" class="btn btn-outline">Login</button>
+                    <button id="register-btn" class="btn btn-primary">Register</button>
+                </div>
+                <div id="user-menu" class="user-menu hidden">
+                    <span id="username-display"></span>
+                    <button id="profile-btn" class="btn btn-outline">Profile</button>
+                    <button id="logout-btn" class="btn btn-outline">Logout</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Authentication Modal -->
+        <div id="auth-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="login-form" class="auth-form">
+                    <h2>Login</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <input type="email" id="login-email" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="login-password" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        <p class="auth-switch">
+                            Don't have an account? <a href="#" id="show-register">Register</a>
+                        </p>
+                        <p class="auth-switch">
+                            <a href="#" id="show-forgot-password">Forgot Password?</a>
+                        </p>
+                    </form>
+                </div>
+
+                <div id="register-form" class="auth-form hidden">
+                    <h2>Register</h2>
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <input type="text" id="register-username" placeholder="Username" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="register-email" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="register-password" placeholder="Password" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="register-confirm" placeholder="Confirm Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Register</button>
+                        <p class="auth-switch">
+                            Already have an account? <a href="#" id="show-login">Login</a>
+                        </p>
+                    </form>
+                </div>
+
+                <div id="forgot-password-form" class="auth-form hidden">
+                    <h2>Reset Password</h2>
+                    <form id="forgotPasswordForm">
+                        <div class="form-group">
+                            <input type="email" id="forgot-email" placeholder="Email" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Reset Link</button>
+                        <p class="auth-switch">
+                            <a href="#" id="back-to-login">Back to Login</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Modal -->
+        <div id="profile-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Profile Settings</h2>
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="profile-username">Username</label>
+                        <input type="text" id="profile-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email">Email</label>
+                        <input type="email" id="profile-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="profile-notifications">
+                            Enable email notifications for comments
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Profile</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Camera Section -->
+            <section id="camera-section" class="section">
+                <h2>Create Your Photo</h2>
+                <div class="camera-container">
+                    <div class="camera-preview">
+                        <video id="video" autoplay muted></video>
+                        <canvas id="canvas" class="hidden"></canvas>
+                        <div id="preview-container" class="hidden">
+                            <img id="preview-image" alt="Preview">
+                        </div>
+                        <div id="overlay-preview" class="overlay-preview"></div>
+                    </div>
+                    
+                    <div class="camera-controls">
+                        <div class="overlay-selection">
+                            <h3>Choose an Overlay</h3>
+                            <div id="overlay-options" class="overlay-options">
+                                <!-- Overlays will be loaded dynamically -->
+                            </div>
+                        </div>
+                        
+                        <div class="camera-buttons">
+                            <input type="file" id="file-input" accept="image/*" class="hidden">
+                            <button id="upload-btn" class="btn btn-outline">Upload Image</button>
+                            <button id="start-camera-btn" class="btn btn-outline">Start Camera</button>
+                            <button id="capture-btn" class="btn btn-primary" disabled>Capture Photo</button>
+                            <button id="save-btn" class="btn btn-success hidden">Save Photo</button>
+                            <button id="retake-btn" class="btn btn-outline hidden">Retake</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Gallery Section -->
+            <section id="user-gallery-section" class="section hidden">
+                <h2>My Photos</h2>
+                <div id="user-gallery" class="gallery">
+                    <!-- User photos will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Public Gallery Section -->
+            <section id="gallery-section" class="section">
+                <h2>Public Gallery</h2>
+                <div id="gallery" class="gallery">
+                    <!-- Photos will be loaded here -->
+                </div>
+                <div class="pagination">
+                    <button id="prev-page" class="btn btn-outline" disabled>Previous</button>
+                    <span id="page-info">Page 1</span>
+                    <button id="next-page" class="btn btn-outline">Next</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Camagru. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Comment Modal -->
+    <div id="comment-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="comment-content">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification hidden"></div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/webcam.js"></script>
+    <script src="js/gallery.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

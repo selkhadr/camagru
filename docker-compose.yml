@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/var/www/html
+      - ./src:/var/www/src
+    environment:
+      - DB_HOST=db
+      - DB_NAME=camagru
+      - DB_USER=root
+      - DB_PASS=rootpassword
+    depends_on:
+      - db
+    networks:
+      - camagru-network
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: camagru
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./src/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - camagru-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: rootpassword
+    depends_on:
+      - db
+    networks:
+      - camagru-network
+
+volumes:
+  db_data:
+
+networks:
+  camagru-network:
+    driver: bridge
